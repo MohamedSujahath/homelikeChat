@@ -36,9 +36,6 @@ export default class AuthService {
            .send({ email: email, password: password })
            .end(callback);
 
-
-
-
     }
 
 
