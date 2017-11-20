@@ -1017,6 +1017,7 @@ class Dashboard extends React.Component {
                                 <div class="row chat-wrapper">
                                     <div class="col-md-4">
                                         <div class="compose-area">
+                                        
                                             <a href="" onClick={this.handleNewChatClick.bind(this)} class="btn btn-default"><i class="fa fa-edit"></i> New Chat</a>
                                             <a href="" onClick={this.handleDeleteChatClick} class="btn btn-default"><i class="fa fa-edit"></i> Delete Chat</a>
 
@@ -1043,7 +1044,7 @@ class Dashboard extends React.Component {
                                         </div>
 
                                     </div>
-                                    <h5> <b>Select a Online user from the box below to chat .... </b></h5>
+                                    <div class="col-xs-8"><h5> <b>Select a Online user from the box below to chat .... </b></h5></div>
                                     <div class="col-md-8">
 
 
@@ -1072,6 +1073,7 @@ class Dashboard extends React.Component {
                                                        <textarea id="btn-input" ref="typedMessage" name="currentComposedMessage" class="form-control input-sm" placeholder="Type your message here..." onChange={this.handleComposedMessage}  onKeyUp={this.handleKeyUp} onKeyDown={this.handleKeyDown}></textarea>
                                                     </div>
                                                     <div class="col-xs-8">
+                                                    <p> (Please select/click on the conversation on the left column before starting to type.) </p>
                                                     </div>
                                                     <div class="col-xs-4">
                                                         <button class="btn btn-green btn-sm pull-right" onClick={this.handleSendClick}>
