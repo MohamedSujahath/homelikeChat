@@ -7,12 +7,10 @@ import AuthService from '../authservice/AuthService';
 
 var blockStyle = {
     display: 'block'
-
 };
 
 var noneStyle = {
     display: 'none'
-
 };
 
 export class Register extends React.Component {
@@ -29,6 +27,7 @@ export class Register extends React.Component {
 
     this.handleRegisterClick = this.handleRegisterClick.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.handleCancelClick = this.handleCancelClick.bind(this);
     this.handleRegisterResponse = this.handleRegisterResponse.bind(this);
     this.Auth = new AuthService();
   }
@@ -38,14 +37,65 @@ export class Register extends React.Component {
     //alert("Register Now clicked");
     //alert("Username: " + this.state.password);
     e.preventDefault();
-    this.Auth.register(this.state.username,this.state.password,this.state.email, this.handleRegisterResponse);
+
+    if(this.state.username === '' || this.state.password === '' || this.state.email === '')
+    {
+        alert("Please fill all the fields to register a user");
+    }
+    else {
+      //alert("Invoking register service");
+
+          var emailValid = this.validateEmail(this.state.email);
+          //alert("email Valid" + emailValid);
+          if(emailValid)
+          {
+            //alert("Valid email");
+            this.Auth.register(this.state.username,this.state.password,this.state.email, this.handleRegisterResponse);
+          }
+          else {
+            alert("Invalid email !!! Please enter Email in proper format.");
+          }
+
+    }
+
+
+  }
+
+  handleCancelClick(e)
+  {
+    //alert("handleCancelClick clicked");
+
+    e.preventDefault();
+
+      this.props.history.push('/login');
+
+  }
+
+ validateEmail(email)
+  {
+   if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email))
+    {
+      return true;
+    }
+    else {
+        return false;
+    }
+      //alert("You have entered an invalid email address!")
 
   }
 
   handleRegisterResponse(err, res)
   {
       //alert("Registeration Success");
-       this.props.history.push('/login');
+
+      if(!res.body.success)
+      {
+        alert(res.body.message);
+      }
+      else {
+        this.props.history.push('/login');
+      }
+
 
   }
 
@@ -83,6 +133,11 @@ render() {
                             <div class="row">
                               <div class="col-sm-6 col-sm-offset-3">
                                 <input type="submit" name="register-submit" id="register-submit" tabindex="4" class="form-control btn btn-register" value="Register Now" onClick={this.handleRegisterClick}/>
+                              </div>
+                            </div><br/>
+                            <div class="row">
+                              <div class="col-sm-6 col-sm-offset-3">
+                                <input type="submit" name="cancel-submit" id="cancel-submit" tabindex="4" class="form-control btn btn-register" value="Cancel" onClick={this.handleCancelClick}/>
                               </div>
                             </div>
                           </div>

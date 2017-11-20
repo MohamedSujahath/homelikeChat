@@ -56,7 +56,7 @@ export default class AuthService {
             //this.setToken(res.token) // Setting the token in localStorage
             return Promise.resolve(res);
         })*/
-
+          //alert(" register service");
         request.post('https://homelikechat.herokuapp.com/api/registerUser')
               .set('Content-Type', 'application/json')
              .send({ username: username, password: password, email:email  })
@@ -226,6 +226,15 @@ export default class AuthService {
                .send({ conversationId: conversationId, composedMessage: composedMessage, user: user, recipient:recipient })
                .end(callback);
 
+      }
+
+      deleteConversation(conversationId, user, callback) {
+        //alert("inside delete a conversation API");
+
+        request.post('https://homelikechat.herokuapp.com/api/deleteConversation')
+              .set('Content-Type', 'application/json')
+             .send({ conversationId: conversationId, user: user})
+             .end(callback);
       }
 
     loggedIn() {

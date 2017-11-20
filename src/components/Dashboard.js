@@ -1,13 +1,23 @@
 import React from 'react';
 import '../css/dashboard.css';
-
 import io from 'socket.io-client';
+import { withRouter } from 'react-router-dom';
+import Notifications, {notify} from 'react-notify-toast';
+
 
 import AuthService from '../authservice/AuthService';
 
 const Auth = new AuthService();
 
-const socket = io('https://homelikechat.herokuapp.com');
+var timeoutID = null;
+
+
+
+  var inputBoxStyle = {
+       border: 'none',
+       background: 'transparent'
+
+   };
 
  var blockStyle = {
     display: 'block'
@@ -92,29 +102,70 @@ var logoutButtonStyle = {
 
 class ConversationListBody extends React.Component {
 
+  constructor(props) {
+    super(props);
+    this.props = props;
+
+    this.handleCheckboxSelect = this.handleCheckboxSelect.bind(this);
+
+  }
+
+
+  handleCheckboxSelect(e, index)
+  {
+    //alert("inside checkbox alert" + index + "checked: " + this.refs.checkbox.checked);
+    var state = this.props.state
+    var componentHandle = this.props.componentHandle
+
+    var selectedList = [];
+    selectedList = state.currentSelectedCheckboxIndex
+
+    var checkboxName = "checkbox" + index;
+
+      if(this.refs.checkbox.checked)
+      {
+        //alert("Add");
+          selectedList.push(index);
+      }
+      else {
+        //alert("remove");
+        var valueIndex = selectedList.indexOf(index);
+        selectedList.splice(valueIndex,1);
+      }
+
+  /*  for (var i = 0; i < selectedList.length; i++)
+      {
+          alert("state Array values:" + state.currentSelectedCheckboxIndex[i]);
+      }*/
+      //componentHandle.setState({state});
+  }
 
 render() {
 
   var conversation = this.props.conversation
   var state = this.props.state
+  var index = this.props.index
+  var checkboxName = "checkbox" + index;
 
   if(conversation.author['email'] === state.userDetails.email){
         return(
               <div>
-              <span class="avatar">
-                  <img src={conversation.recipient['avatarImg']} alt="avatar" class="img-circle" />
-              </span>
-                    <div class="body">
-                        <div class="header">
-                            <span class="username">{conversation.recipient['username']}</span>
-                            <small class="timestamp text-muted">
-                                <i class="fa fa-clock-o"></i>1 secs ago
-                            </small>
+                <input type="checkbox" name={checkboxName} value={state.conversationList.indexOf(conversation)} ref="checkbox" onChange={(e)=>this.handleCheckboxSelect(e,state.conversationList.indexOf(conversation))}/>
+
+              <div>
+                  <span class="avatar available" data-toggle="tooltip" >
+
+                      <img src={conversation.recipient['avatarImg']} alt="avatar" class="img-circle" />
+                  </span>
+                        <div class="body">
+                            <div class="header">
+                                <span class="username">{conversation.recipient['username']}</span>
+                            </div>
+                            <p>
+                                {conversation.body}
+                            </p>
                         </div>
-                        <p>
-                            {conversation.body}
-                        </p>
-                    </div>
+                  </div>
 
               </div>
         );
@@ -122,20 +173,20 @@ render() {
    else {
     return(
         <div>
-        <span class="avatar">
-            <img src={conversation.author['avatarImg']} alt="avatar" class="img-circle" />
-        </span>
-              <div class="body">
-                  <div class="header">
-                      <span class="username">{conversation.author['username']}</span>
-                      <small class="timestamp text-muted">
-                          <i class="fa fa-clock-o"></i>1 secs ago
-                      </small>
+           <input type="checkbox" name={checkboxName} value={state.conversationList.indexOf(conversation)} ref="checkbox" onChange={(e)=>this.handleCheckboxSelect(e,state.conversationList.indexOf(conversation))}/>
+        <div>
+            <span class="avatar available" data-toggle="tooltip" >
+                <img src={conversation.author['avatarImg']} alt="avatar" class="img-circle" />
+            </span>
+                  <div class="body">
+                      <div class="header">
+                          <span class="username">{conversation.author['username']}</span>
+                      </div>
+                      <p>
+                          {conversation.body}
+                      </p>
                   </div>
-                  <p>
-                      {conversation.body}
-                  </p>
-              </div>
+            </div>
         </div>
     );
   }
@@ -151,13 +202,15 @@ render() {
   var conversation = this.props.conversation
   var state = this.props.state
   var componentHandle = this.props.componentHandle
+  var index = state.conversationList.indexOf(conversation)
+
   if(state.conversationList.length > 0){
     return(
           <div>
                 <li class="" value= {state.conversationList.indexOf(conversation)} onClick={(e)=>componentHandle.handleConversationClick(e,state.conversationList.indexOf(conversation))}>
 
                     <div>
-                      <ConversationListBody conversation={conversation} state={state}/>
+                      <ConversationListBody conversation={conversation} state={state} index={state.conversationList.indexOf(conversation)} componentHandle={componentHandle}/>
                     </div>
                 </li>
 
@@ -187,7 +240,7 @@ render() {
                 <li class="right">
                      <span class="timestamp">{message.author['username']}</span>
 
-                    <span class="avatar tooltips" data-toggle="tooltip " data-placement="left" data-original-title="Kevin Mckoy">
+                    <span class="avatar available" data-toggle="tooltip " data-placement="left">
                         <img src={message.author['avatarImg']} alt="avatar" class="img-circle" />
                     </span>
                     <div class="body">
@@ -213,6 +266,8 @@ render() {
 
 class UsersChatMessageList extends React.Component {
 
+
+
   render() {
     var state = this.props.state
 
@@ -231,8 +286,11 @@ class UsersChatMessageList extends React.Component {
 
                 </ul>
 
+
             </div>
-            <div class="slimScrollBar" style={slimscrollBarStyle}></div>
+
+
+            <div class="slimScrollBar" ref="slimScrollBar" style={slimscrollBarStyle}></div>
             <div class="slimScrollRail" style={slimScrollRailStyle}></div>
             </div>
 
@@ -245,6 +303,7 @@ class UsersChatMessageList extends React.Component {
 
 
 class OnlineUsersList extends React.Component {
+
 
   render() {
 
@@ -262,7 +321,7 @@ class OnlineUsersList extends React.Component {
       else {
         return(
 
-          <option value={onlineusers._id}>{onlineusers.username}</option>
+          <option value={onlineusers._id}>{onlineusers.username} - {onlineusers.onlineStatus}</option>
 
         );
       }
@@ -320,34 +379,75 @@ class Dashboard extends React.Component {
       conversationList: [],
       messageList: [],
       onlineUsers: [],
-      currentConversationID: 0,
-      currentRecipientDetails: {},
+      currentSelectedConversation: {},
       currentComposedMessage: '',
-      currentSelectedOnlineUser: ''
+      currentSelectedOnlineUser: '',
+      socket: {},
+      currentSelectedCheckboxIndex: []
     };
 
    //this.handleConversationClick = this.handleConversationClick.bind(this);
     this.handleNewChatClick = this.handleNewChatClick.bind(this);
     this.handleDeleteChatClick = this.handleDeleteChatClick.bind(this);
-    this.handleGroupChatClick = this.handleGroupChatClick.bind(this);
+    //this.handleGroupChatClick = this.handleGroupChatClick.bind(this);
     this.handleSendClick = this.handleSendClick.bind(this);
     this.handleComposedMessage = this.handleComposedMessage.bind(this);
     this.handleSelectChange = this.handleSelectChange.bind(this);
     this.sendReplyToConversation = this.sendReplyToConversation.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleGetAllConversationResponse = this.handleGetAllConversationResponse.bind(this);
     this.handleGetAllMessagesResponse = this.handleGetAllMessagesResponse.bind(this);
     this.handleNewChatResponse = this.handleNewChatResponse.bind(this);
     this.handleReplyConversationResponse = this.handleReplyConversationResponse.bind(this);
+    //this.scrollDown = this.scrollDown.bind(this);
+    this.handleDeleteChatResponse = this.handleDeleteChatResponse.bind(this);
+    this.handleUserProfileClick = this.handleUserProfileClick.bind(this);
+    this.handleOnlineUsersResponse = this.handleOnlineUsersResponse.bind(this);
     this.Auth = new AuthService();
 
-    socket.on('chatMessage', (incomingMessage) => {
+
+    /*socket.on('broadcastMessage', (incomingMessage) => {
       //this.props.newMessage({ message: incomingMessage })
       console.log("Incoming Message :" + incomingMessage);
+      alert("incoming message: " + incomingMessage);
        })
+
+       socket.on('socketID', (socketID) => {
+         //this.props.newMessage({ message: incomingMessage })
+         console.log("Incoming Socket ID :" + socketID);
+         alert("incoming message: " + socketID);
+       })*/
+      //alert("Dashboard Constructor");
+
+
+  }
+
+
+
+  initSocket(){
+
+   const socket = io('https://homelikechat.herokuapp.com', {query: {token: this.state.userDetails.email, name: this.state.userDetails.username}});
+    //alert("inside init socket " + this.state.userDetails['email'] );
+      /*{
+           reconnection: true,
+           reconnectionDelay: 1000,
+           reconnectionDelayMax : 5000,
+           reconnectionAttempts: 99999
+       }*/
+
+    //this.setState({socket: socket});
+
+    //var loginPageState = this.props.location.state;
+    // alert("Init Socket: " + socket);
+    this.setState({socket:socket});
+
   }
 
     handleLogout(){
+      var loggedInUserName = this.state.userDetails['username'];
+      var loggedInUserEmail = this.state.userDetails['email'];
+      this.state.socket.emit('userLogout', {userName:loggedInUserName, userEmail: loggedInUserEmail});
         Auth.logout();
         this.props.history.replace('/login');
     }
@@ -359,40 +459,71 @@ class Dashboard extends React.Component {
         this.setState({onlineUsers: JSON.parse(this.Auth.getAllOnlineUsersObject())});
         this.setState({conversationList: conversationArray});
 
+        var loggedInUserEmail = this.state.userDetails['email']
+
+        //  alert("Dashboard will mount :" + loggedInUserEmail);
+
     }
 
     componentDidMount() {
       //console.log('Dashboard did mount.');
-      //alert("Dashboard did mount");
+    //  alert("Dashboard did mount");
       //var json = JSON.parse(this.Auth.getUserDetailsObject())
       //alert("User Details in Dashboard: " + this.state.userDetails['username'])
+
+
+
+
       var loggedInUserID = this.state.userDetails['_id']
+
       var loggedInUserEmail = this.state.userDetails['email']
+
+        //alert("Dashboard did mount" + loggedInUserEmail);
+
+        this.initSocket();
 
       this.refreshConversationList(loggedInUserID);
 
-      socket.emit('userJoined', {connectedUserEmail: loggedInUserEmail});
-      socket.on('chatMessage', (incomingMessage) => {
+
+
+      /*this.state.socket.on('connection', (socketID) => {
         //this.props.newMessage({ message: incomingMessage })
-        console.log("Incoming Message :" + incomingMessage);
+        console.log("Incoming Socket ID :" + socketID);
+        alert("incoming message: " + socketID);
          })
 
-        this.handleIncomingMessageEvent();
+      this.state.socket.on('socketID', (socketID) => {
+        //this.props.newMessage({ message: incomingMessage })
+        console.log("Incoming Socket ID :" + socketID);
+        alert("incoming message: " + socketID);
+      })*/
+
+      //this.state.socket.emit('userJoined', {connectedUserEmail: loggedInUserEmail});
+      /*this.state.socket.on('broadcastMessage', (incomingMessage) => {
+        //this.props.newMessage({ message: incomingMessage })
+        console.log("Incoming Message :" + incomingMessage.message);
+          alert("incoming message: " + incomingMessage.message);
+      })*/
+
+        //this.handleIncomingMessageEvent();
+
+        //this.scrollDown();
 
 
     }
 
     handleIncomingMessageEvent(){
-     socket.on('chatMessage', (incomingMessage) => {
+     /*this.state.socket.on('broadcastMessage', (incomingMessage) => {
        //this.props.newMessage({ message: incomingMessage })
        console.log("Incoming Message :" + incomingMessage);
-        })
+         alert("incoming message: " + incomingMessage);
+       })*/
      }
 
 
     refreshConversationList(loggedInUserID)
     {
-    //  alert("refresh conversations list" + loggedInUserID);
+      //alert("refresh conversations list" + loggedInUserID);
       this.Auth.getAllConversationList(loggedInUserID, this.handleGetAllConversationResponse);
     }
 
@@ -400,6 +531,7 @@ class Dashboard extends React.Component {
     handleGetAllConversationResponse(err,res)
     {
       //alert("Load Conversation Success" + res.body.conversations.length);
+      //alert("State object : " + JSON.stringify(this.state));
         var conversationArray = [];
           if(res.body.conversations.length > 0) {
                   for (var i = 0; i < res.body.conversations.length; i++) {
@@ -420,12 +552,160 @@ class Dashboard extends React.Component {
 
       this.setState({conversationList: conversationArray});
 
+      //alert("Selected Online User: " + this.refs.currentSelectedOnlineUser.value);
+      this.setState({currentSelectedOnlineUser: this.refs.currentSelectedOnlineUser.value});
+
+
+
+      this.state.socket.on('broadcastMessage', (incomingMessage) => {
+        //this.props.newMessage({ message: incomingMessage })
+        console.log("Incoming Message :" + incomingMessage.message);
+          //alert("incoming message: " + incomingMessage.message);
+          var loggedInUserID = this.state.userDetails['_id']
+          this.refreshConversationList(loggedInUserID);
+          this.refreshMessagesList(incomingMessage.conversationID);
+      })
+
+      this.state.socket.on('showUserTyping', (typingMessage) => {
+        //this.props.newMessage({ message: incomingMessage })
+        //alert("User Typing :" + typingMessage.typingUserName);
+          //alert("incoming message: " + incomingMessage.message);
+            this.refs.userTypingLabel.value = typingMessage.typingUserName + " is typing ...";
+      })
+
+
+    this.state.socket.on('userStoppedTyping', (typingMessage) => {
+      //this.props.newMessage({ message: incomingMessage })
+      //alert("User Typing :" + typingMessage.typingUserName);
+        //alert("incoming message: " + incomingMessage.message);
+          this.refs.userTypingLabel.value = "";
+    })
+
+
+    this.state.socket.on('userLoggedOut', (logoutMessage) => {
+      //this.props.newMessage({ message: incomingMessage })
+      //alert("User Typing :" + typingMessage.typingUserName);
+        //alert("User Logged Out :  " + logoutMessage.userName);
+          //this.refs.userTypingLabel.value = "";
+          let myColor = { background: '#0000FF', text: '#FFFFFF' };
+          notify.show(logoutMessage.userName + ' has logged out from Homelike Chat !!!' , myColor);
+
+          this.Auth.getAllOnlineUsers(this.handleOnlineUsersResponse);
+    })
+
+    this.state.socket.on('userLoggedIn', (connectMessage) => {
+      //this.props.newMessage({ message: incomingMessage })
+      //alert("User Typing :" + typingMessage.typingUserName);
+        //alert("User Logged Out :  " + logoutMessage.userName);
+          //this.refs.userTypingLabel.value = "";
+          var loggedInUserName = this.state.userDetails['username']
+          if(loggedInUserName !== connectMessage){
+            let myColor = { background: '#0000FF', text: '#FFFFFF' };
+            notify.show(connectMessage + ' is now online ...' , myColor);
+          }
+
+          this.Auth.getAllOnlineUsers(this.handleOnlineUsersResponse);
+
+    })
+
+    this.state.socket.on('newChatStarted', (newChatMessage) => {
+      //this.props.newMessage({ message: incomingMessage })
+      //alert("User Typing :" + typingMessage.typingUserName);
+        //alert("User Logged Out :  " + logoutMessage.userName);
+          //this.refs.userTypingLabel.value = ""
+
+          //this.Auth.getAllOnlineUsers(this.handleOnlineUsersResponse);
+
+
+                var loggedInUserID = this.state.userDetails['_id']
+                this.refreshConversationList(loggedInUserID);
+
+                let myColor = { background: '#0000FF', text: '#FFFFFF' };
+                notify.show(newChatMessage.userName + ' has initiated a new chat with you !!!' , myColor);
+
+    })
+
+    this.state.socket.on('chatDeleted', (deleteChatMessage) => {
+      //this.props.newMessage({ message: incomingMessage })
+      //alert("User Typing :" + typingMessage.typingUserName);
+        //alert("User Logged Out :  " + logoutMessage.userName);
+          //this.refs.userTypingLabel.value = ""
+
+          //this.Auth.getAllOnlineUsers(this.handleOnlineUsersResponse);
+          var loggedInUserID = this.state.userDetails['_id']
+          this.refreshConversationList(loggedInUserID);
+
+          //let myColor = { background: '#0000FF', text: '#FFFFFF' };
+          //notify.show(deleteChatMessage.userName + ' has deleted a conversation between you.' , myColor);
+
+    })
+
+    /*this.state.socket.on('connect', function() {
+      alert("connect");
+    })
+
+    this.state.socket.on('connecting', function() {
+      alert("connecting");
+    })
+
+    this.state.socket.on('disconnect', function() {
+      alert("disconnect");
+    })
+
+    this.state.socket.on('connect_failed', function() {
+      alert("connect_failed");
+    })
+    this.state.socket.on('error', function() {
+      alert("error");
+    })
+    this.state.socket.on('message', function() {
+      alert("message");
+    })
+    this.state.socket.on('reconnect', function() {
+      alert("reconnect!");
+    })
+
+    this.state.socket.on('reconnecting', function() {
+      alert("reconnecting");
+    })
+
+    this.state.socket.on('reconnect_failed', function() {
+      alert("reconnect_failed");
+    })*/
+
+
+    }
+
+    handleOnlineUsersResponse(err, res)
+    {
+       //alert("inside OnlineUsers callback");
+
+
+        this.Auth.setAllOnlineUsersObject(JSON.stringify(res.body.users));
+
+        //var socket = this.state.socket;
+  //this.state.socket.io.engine.id
+        //alert("Socket object ID: " + socket + " - " + io().id);
+
+        //socket = this.connectToSocket();
+      //  this.setState({socket: socket});
+
+      //  this.props.history.push('/dashboard');
+
+      //  socket.on('connect', this.callOnSocketConnection(socket));
+
+      //this.initializeSocketConnection();
+
+      this.setState({onlineUsers: JSON.parse(this.Auth.getAllOnlineUsersObject())});
+
     }
 
 
       refreshMessagesList(conversationID)
       {
         this.Auth.getAllMessagesList(conversationID, this.handleGetAllMessagesResponse);
+
+
 
       }
 
@@ -449,21 +729,27 @@ class Dashboard extends React.Component {
             // set the state for message List
           this.setState({messageList: messagesArray});
         //  alert("Messages List body state: " + this.state.messageList[0].body);
+      //  this.scrollDown();
+
+
+
       }
 
     handleConversationClick(e, index)
     {
     //  alert("Conversation clicked" + index);
       //alert("Username: " + this.state.password);
-      e.preventDefault();
+      //e.preventDefault();
+
 
       var conversationArray = this.state.conversationList;
 
       var conversationID = conversationArray[index].conversationId;
 
-      var recipient = conversationArray[index].recipient;
-      this.setState({currentConversationID: conversationID});
-      this.setState({currentRecipientDetails: recipient});
+      var conversation = conversationArray[index];
+      //alert("Conversation :" + conversation.author.email);
+      this.setState({currentSelectedConversation: conversation});
+      //this.setState({currentRecipientDetails: recipient});
 
       this.refreshMessagesList(conversationID);
 
@@ -472,52 +758,162 @@ class Dashboard extends React.Component {
     handleNewChatClick(e)
     {
      e.preventDefault();
-    // alert("New chat Clicked");
-    //    alert("Selected recipient: " + this.state.currentSelectedOnlineUser);
+     //alert("New chat Clicked");
+      // alert("Selected recipient: " + this.state.currentSelectedOnlineUser);
         var currentSelectedUser = this.state.currentSelectedOnlineUser;
-      this.Auth.postNewConversation("Hi", currentSelectedUser, this.state.userDetails, this.handleNewChatResponse);
+      this.Auth.postNewConversation("Hi...", currentSelectedUser, this.state.userDetails, this.handleNewChatResponse);
 
     }
 
     handleNewChatResponse(err,res)
     {
-      // alert("New Conversation posted !!!");
+      //alert("New Conversation posted !!!");
        var loggedInUserID = this.state.userDetails['_id'];
+
+       var loggedInUserName = this.state.userDetails['username'];
+       var loggedInUserEmail = this.state.userDetails['email'];
+
+         var receiverUserID = this.state.currentSelectedOnlineUser;
+         var onlineUserList = this.state.onlineUsers;
+         var receiverUserObj = {};
+
+         for(var i =0 ; i< onlineUserList.length ; i++)
+         {
+           var userObj = onlineUserList[i];
+           if(userObj._id === receiverUserID)
+           {
+                receiverUserObj = userObj;
+           }
+         }
+         var receiverUserName = receiverUserObj.username;
+         var receiverUserEmail = receiverUserObj.email;
+
+
+         this.state.socket.emit('newChatPosted', {UserEmail:loggedInUserEmail, userName: loggedInUserName, receiverEmail: receiverUserEmail});
          this.refreshConversationList(loggedInUserID);
     }
 
     handleDeleteChatClick(e)
     {
-      alert("Delete chat Clicked");
+      //alert("Delete chat Clicked");
       e.preventDefault();
+      if(this.state.currentSelectedCheckboxIndex.length === 0)
+      {
+        alert("Please select a Conversation to delete");
+      }
+      else {
+
+        var conversationList = this.state.conversationList;
+
+        for(var i =0 ; i< this.state.currentSelectedCheckboxIndex.length ; i++)
+        {
+            var conversation = conversationList[this.state.currentSelectedCheckboxIndex[i]];
+            //alert("Deleting Conversation Id:" + conversation.conversationId);
+            this.Auth.deleteConversation(conversation.conversationId, this.state.userDetails, this.handleDeleteChatResponse);
+
+        }
+
+
+      }
+    }
+
+    handleDeleteChatResponse(err,res)
+    {
+    //  alert("received response for delete");
+
+      var loggedInUserID = this.state.userDetails['_id'];
+      var conversationID = this.state.currentSelectedConversation.conversationId;
+
+    //  var loggedInUserID = this.state.userDetails['_id'];
+
+      var loggedInUserName = this.state.userDetails['username'];
+      var loggedInUserEmail = this.state.userDetails['email'];
+
+        //var receiverUserID = this.state.currentSelectedOnlineUser;
+
+        this.state.socket.emit('chatRemoved', {UserEmail:loggedInUserEmail, userName: loggedInUserName});
+
+
+        this.refreshConversationList(loggedInUserID);
+        this.refreshMessagesList(conversationID);
     }
 
     handleKeyDown(e)
     {
       //alert("handle key down clicked");
-
+      //  clear timeout
+      clearTimeout(timeoutID);
       if(e.keyCode == 13)
       {
+        e.preventDefault();
         //alert("press enter");
         this.sendReplyToConversation();
       }
     }
 
-    handleGroupChatClick(e)
+    handleKeyUp(e)
     {
-      //alert("Group chat Clicked");
-      e.preventDefault();
+      //alert("handle key down clicked");
+      //set the setTimeout and pass the callback
+
+      timeoutID = setTimeout(this.removeUserTypingMessage(), 5000);
     }
+
+    removeUserTypingMessage()
+    {
+        //this.refs.userTypingLabel.innerHTML = "";
+        //emit the scoket message here
+        // on socket listening remove the typing message
+
+        var loggedInUserName = this.state.userDetails['username'];
+        var loggedInUserEmail = this.state.userDetails['email'];
+        var currentConversation = this.state.currentSelectedConversation
+        var recipientEmail = "";
+        var currentRecipient = {};
+        if(loggedInUserEmail === currentConversation.author['email'])
+        {
+          //alert("inside logged in user" + currentConversation.recipient);
+             recipientEmail = currentConversation.recipient['email'];
+             currentRecipient = currentConversation.recipient;
+        }
+        else
+        {
+             recipientEmail = currentConversation.author['email'];
+             currentRecipient = currentConversation.author;
+        }
+
+        this.state.socket.emit('removeUserTyping', {typingUserEmail:loggedInUserEmail, typingUserName:loggedInUserName, receiverEmail: recipientEmail});
+    }
+
+
 
     handleComposedMessage(e)
     {
-    //  alert("handle Composed Message");
+      //alert("handle Composed Message");
       e.preventDefault();
 
       this.setState({
         [e.target.name]: e.target.value,
       });
 
+      var loggedInUserName = this.state.userDetails['username'];
+      var loggedInUserEmail = this.state.userDetails['email'];
+      var currentConversation = this.state.currentSelectedConversation
+      var recipientEmail = "";
+      var currentRecipient = {};
+      if(loggedInUserEmail === currentConversation.author['email'])
+      {
+        //alert("inside logged in user" + currentConversation.recipient);
+           recipientEmail = currentConversation.recipient['email'];
+           currentRecipient = currentConversation.recipient;
+      }
+      else
+      {
+           recipientEmail = currentConversation.author['email'];
+           currentRecipient = currentConversation.author;
+      }
+
+        this.state.socket.emit('userTyping', {typingUserEmail:loggedInUserEmail, typingUserName:loggedInUserName, receiverEmail: recipientEmail});
     }
 
     handleSelectChange(e)
@@ -527,6 +923,7 @@ class Dashboard extends React.Component {
         this.setState({
           [e.target.name]: e.target.value,
         });
+
     }
 
     handleSendClick(e)
@@ -538,25 +935,58 @@ class Dashboard extends React.Component {
         this.sendReplyToConversation();
     }
 
+    handleUserProfileClick(e)
+    {
+      //alert("handleUserProfileClick");
+
+      e.preventDefault();
+
+      this.props.history.push({pathname: '/userprofile', query: {user: this.state.userDetails}});
+
+    }
+
     sendReplyToConversation()
     {
-      //alert("inside send reply");
-      var currentConversationID = this.state.currentConversationID;
+    //  alert("inside send reply");
+     var currentConversation = this.state.currentSelectedConversation;
+     var conversationID = currentConversation['conversationId'];
      var composedMessage = this.state.currentComposedMessage;
-      this.Auth.replyToConversation(currentConversationID, composedMessage, this.state.userDetails, this.state.currentRecipientDetails, this.handleReplyConversationResponse);
 
+     var loggedInUserID = this.state.userDetails['_id'];
+     var loggedInUserEmail = this.state.userDetails['email'];
+     //alert("inside logged in user" + currentConversation.author['email']  + currentConversation.recipient['email'] + loggedInUserEmail);
+     var recipientEmail = "";
+     var currentRecipient = {};
+     if(loggedInUserEmail === currentConversation.author['email'])
+     {
+       //alert("inside logged in user" + currentConversation.recipient);
+          recipientEmail = currentConversation.recipient['email'];
+          currentRecipient = currentConversation.recipient;
+     }
+     else
+     {
+          recipientEmail = currentConversation.author['email'];
+          currentRecipient = currentConversation.author;
+     }
+
+      //alert("current Recipient :" + currentRecipient.email);
+      var composedMessage = this.state.currentComposedMessage;
+
+      //alert("composed Message:" + composedMessage);
+      //alert("State : " + this.state.socket);
+        //socket.emit('userJoined', {connectedUserEmail: loggedInUserEmail});
+      this.state.socket.emit('chatMessage', {authorEmail:loggedInUserEmail, recipientEmail: recipientEmail , message: composedMessage , conversationID: conversationID});
+
+      this.Auth.replyToConversation(conversationID, composedMessage, this.state.userDetails, currentRecipient, this.handleReplyConversationResponse);
+      this.refs.typedMessage.value = '';
     }
 
     handleReplyConversationResponse(err,res)
     {
 
       //alert("Reply Success" + res.body);
+          var loggedInUserID = this.state.userDetails['_id'];
 
-         this.refs.typedMessage.value = '';
-         var loggedInUserID = this.state.userDetails['_id'];
-         var recipientEmail = this.state.currentRecipientDetails.email;
-          var composedMessage = this.state.currentComposedMessage;
-         socket.emit('chatMessage', {recipientEmail: recipientEmail , message: composedMessage });
          this.refreshMessagesList(res.body.conversationId);
          this.refreshConversationList(loggedInUserID);
 
@@ -570,13 +1000,14 @@ class Dashboard extends React.Component {
       <div>
 
         <div class="container">
+        <Notifications />
             <div class="row">
                     <div class="col-sm-12">
                     <center> <h1> Home Like Chat Application </h1> </center>
                     <div className="App-header">
-                        <h2><span class="avatar">
-                            <img style={avatarImageStyle} src={this.state.userDetails.avatarImg} alt="avatar" class="img-circle halfsize" />
-                        </span>  Welcome {this.state.userDetails['username']},</h2>
+                        <h2><span class="avatar available">
+                            <img  style={avatarImageStyle} src={this.state.userDetails.avatarImg} alt="avatar" class="img-circle halfsize" />
+                        </span>  Welcome <a href="" onClick={this.handleUserProfileClick.bind(this)}>{this.state.userDetails['username']}</a>,</h2>
                         <a href="" class="btn btn-default" onClick={this.handleLogout.bind(this)} style={logoutButtonStyle}>Logout</a>
                     </div>
 
@@ -588,7 +1019,7 @@ class Dashboard extends React.Component {
                                         <div class="compose-area">
                                             <a href="" onClick={this.handleNewChatClick.bind(this)} class="btn btn-default"><i class="fa fa-edit"></i> New Chat</a>
                                             <a href="" onClick={this.handleDeleteChatClick} class="btn btn-default"><i class="fa fa-edit"></i> Delete Chat</a>
-                                            <a href="" onClick={this.handleGroupChatClick} class="btn btn-default"><i class="fa fa-edit"></i> Group Chat</a>
+
                                         </div>
 
                                         <div>
@@ -618,7 +1049,7 @@ class Dashboard extends React.Component {
 
                                         <div class="recipient-box">
 
-                                            <select name= "currentSelectedOnlineUser" data-placeholder=" " class="form-control chzn-select chzn-done" multiple="" style={blockStyle} onChange={this.handleSelectChange}>
+                                            <select name= "currentSelectedOnlineUser" ref = "currentSelectedOnlineUser" data-placeholder=" " class="form-control chzn-select chzn-done" multiple="" style={blockStyle} onChange={this.handleSelectChange}>
                                                   {this.state.onlineUsers.map(onlineusers =>
 
                                                           <OnlineUsersList onlineUsers={onlineusers} state={this.state}/>
@@ -634,13 +1065,13 @@ class Dashboard extends React.Component {
 
                                             <div class="compose-box">
                                                 <div class="row">
+                                                <div class="col-xs-12 mg-btm-10">
+                                                    <input style={inputBoxStyle} type="text" name="userTypingText" value = "" ref="userTypingLabel" readonly/>
+                                                 </div>
                                                    <div class="col-xs-12 mg-btm-10">
-                                                       <textarea id="btn-input" ref="typedMessage" name="currentComposedMessage" class="form-control input-sm" placeholder="Type your message here..." onChange={this.handleComposedMessage} onKeyDown={this.handleKeyDown}></textarea>
+                                                       <textarea id="btn-input" ref="typedMessage" name="currentComposedMessage" class="form-control input-sm" placeholder="Type your message here..." onChange={this.handleComposedMessage}  onKeyUp={this.handleKeyUp} onKeyDown={this.handleKeyDown}></textarea>
                                                     </div>
                                                     <div class="col-xs-8">
-                                                        <button class="btn btn-green btn-sm">
-                                                            <i class="fa fa-file"></i> Upload image
-                                                        </button>
                                                     </div>
                                                     <div class="col-xs-4">
                                                         <button class="btn btn-green btn-sm pull-right" onClick={this.handleSendClick}>
@@ -667,4 +1098,4 @@ class Dashboard extends React.Component {
   }
 }
 
-export default Dashboard;
+export default withRouter(Dashboard);

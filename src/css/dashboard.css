@@ -61,11 +61,16 @@ body{margin-top:20px;}
   overflow: hidden;
 }
 .chat .chat-wrapper .chat-list-wrapper .chat-list li:hover {
-  background-color: #f4f4f4;
+  background-color: lightblue;
 }
-.chat .chat-wrapper .chat-list-wrapper .chat-list li.active {
-  background-color: #eee;
-  color: black;
+
+.chat .chat-wrapper .chat-list-wrapper .chat-list li:target {
+  background-color: blue;
+}
+
+.chat .chat-wrapper .chat-list-wrapper .chat-list li:target {
+  background-color: blue;
+  color: blue;
 }
 .chat .chat-wrapper .chat-list-wrapper .chat-list li.active .body .timestamp {
   color: black;

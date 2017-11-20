@@ -4,6 +4,7 @@ import {withRouter} from "react-router-dom";
 import AuthService from '../authservice/AuthService';
 import '../css/login.css';
 
+var socket = "";
 
 var blockStyle = {
     display: 'block'
@@ -54,13 +55,27 @@ class Login extends React.Component {
         this.Auth.setToken(res.body.token);
       //  alert("Email: " + this.state.username);
         this.Auth.getUserDetails(this.state.username, this.handleUserDetailsResponse);
-
     }
     else {
        alert(res.body.message);
+
+
     }
 
   }
+
+  /*connectToSocket()
+  {
+    alert("inside connect to socket");
+    //socket = io('https://homelikechat.herokuapp.com');
+
+
+
+      this.setState({socketID: socketID});
+
+      return socket;
+
+  }*/
 
 
   handleUserDetailsResponse(err,res)
@@ -69,7 +84,7 @@ class Login extends React.Component {
     //alert("inside user details callback");
     this.state.userDetails = this.Auth.getUserDetailsObject;
 
-      this.Auth.setUserDetailsObject(JSON.stringify(res.body.user));
+    this.Auth.setUserDetailsObject(JSON.stringify(res.body.user));
 
     this.Auth.getAllOnlineUsers(this.handleOnlineUsersResponse);
 
@@ -77,13 +92,44 @@ class Login extends React.Component {
 
   handleOnlineUsersResponse(err, res)
   {
-        //alert("inside OnlineUsers callback");
+    //  alert("inside OnlineUsers callback");
 
-        this.Auth.setAllOnlineUsersObject(JSON.stringify(res.body.users));
+      this.Auth.setAllOnlineUsersObject(JSON.stringify(res.body.users));
+
+      //var socket = this.state.socket;
+//this.state.socket.io.engine.id
+      //alert("Socket object ID: " + socket + " - " + io().id);
+
+      //socket = this.connectToSocket();
+    //  this.setState({socket: socket});
 
       this.props.history.push('/dashboard');
 
+    //  socket.on('connect', this.callOnSocketConnection(socket));
+
+    //this.initializeSocketConnection();
+
   }
+
+  /*initializeSocketConnection()
+  {
+    alert("initializeSocketConnection");
+
+    var socket = io.connect('https://homelikechat.herokuapp.com', {query: {token: this.state.username}});
+    alert("Client Socket ID: " + socket.io.engine.id);
+      /*{
+           reconnection: true,
+           reconnectionDelay: 1000,
+           reconnectionDelayMax : 5000,
+           reconnectionAttempts: 99999
+       }*/
+
+  /*  this.setState({socket: socket});
+    //this.setState({socketID: socket.io.engine.id});
+
+    this.props.history.push({pathname:'/dashboard', state: this.state});
+
+  }*/
 
 
 
